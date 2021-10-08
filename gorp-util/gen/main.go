@@ -11,6 +11,7 @@ import (
 	"go/token"
 	"io/ioutil"
 	"reflect"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -171,6 +172,14 @@ func parseEntityMeta(pkg string, name string, structType *ast.StructType, commen
 			switch annotation.Name {
 			case "@TABLE":
 				em.Table = annotation.Key
+			case "@SHARD":
+				em.ShardKey = annotation.Key
+			case "@SHARDING":
+				var err error
+				em.Sharding, err = strconv.Atoi(annotation.Key)
+				if err != nil {
+					panic(err)
+				}
 			case "@PK":
 				em.ID = annotation.Key
 			case "@VER":
@@ -192,15 +201,17 @@ func parseEntityMeta(pkg string, name string, structType *ast.StructType, commen
 }
 
 type entityMeta struct {
-	Pkg     string
-	Name    string
-	Fields  map[string]string
-	Table   string
-	Init    bool
-	ID      string
-	Version string
-	Rels    map[string]*Ref
-	Muls    []*Mul
+	Pkg      string
+	Name     string
+	Fields   map[string]string
+	Table    string
+	ShardKey string
+	Sharding int
+	Init     bool
+	ID       string
+	Version  string
+	Rels     map[string]*Ref
+	Muls     []*Mul
 
 	// for tpl
 	Imports []string
@@ -254,6 +265,7 @@ func (e *entityMeta) generate(tpl *template.Template) {
 	if e.Table == "" {
 		e.Table = snaker.SnakeToCamelLower(e.Name)
 	}
+
 	if e.ID == "" {
 		e.ID = "ID"
 	}
@@ -262,6 +274,9 @@ func (e *entityMeta) generate(tpl *template.Template) {
 		"github.com/zkcrescent/chaos/gorp-util",
 		"github.com/juju/errors",
 		"gopkg.in/gorp.v2",
+	}
+	if e.Sharding > 0 {
+		e.Imports = append([]string{"fmt"}, e.Imports...)
 	}
 	//if (e.Fields["CreatedTime"] + e.Fields["UpdatedTime"] + e.Fields["RemovedTime"]) != "" {
 	//	e.Imports = append(e.Imports, "time")

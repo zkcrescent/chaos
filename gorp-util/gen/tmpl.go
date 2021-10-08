@@ -57,8 +57,12 @@ func (t {{.Name}}) Fields() []string {
 	}
 }
 
+func (t {{.Name}}) Sharding() int64 {
+	return {{.Sharding}}
+}
+
 func (t {{.Name}}) TableName() string {
-	return "{{.Table}}"
+	{{ if eq .Sharding  0 }} return "{{.Table}}" {{ else }} return fmt.Sprintf("{{.Table}}_%v", t.{{.ShardKey}}%t.Sharding()){{ end }}
 }
 
 func (t {{.Name}}) VersionField() string {
