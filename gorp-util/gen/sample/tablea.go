@@ -1,6 +1,8 @@
 package sample
 
 //@TABLE(table_a)
+//@SHARDING(1)
+//@SHARD(ID)
 //@PK(ID)
 //@REL(edgeA)=TableB.AID
 //@REL(edgeB)=TableB.AID
