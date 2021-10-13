@@ -57,3 +57,12 @@ func (c Database) DB() (*gorp.DbMap, error) {
 
 	return &gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{Engine: "InnoDB", Encoding: "UTF8"}}, nil
 }
+
+func (c Database) GDB() (*gorp.DbMap, error) {
+	if db, err := c.DB(); err != nil {
+		return nil, err
+	} else {
+		Global.DB = db
+	}
+	return Global.DB, nil
+}
