@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/go-gorp/gorp v2.2.0+incompatible // indirect
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/juju/errors v0.0.0-20210818161939-5560c4c073ff
 	github.com/lib/pq v1.10.3 // indirect
 	github.com/mattn/go-sqlite3 v1.14.8 // indirect
