@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func EchoTraceMiddleWare(key string) echo.MiddlewareFunc {
+func EchoTraceMiddleWare() echo.MiddlewareFunc {
 	return func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			id := uuid.New().String()
