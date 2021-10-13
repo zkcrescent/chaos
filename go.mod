@@ -6,7 +6,9 @@ require (
 	github.com/aliyun/aliyun-oss-go-sdk v1.9.8
 	github.com/go-gorp/gorp v2.2.0+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/google/uuid v1.1.2
 	github.com/juju/errors v0.0.0-20210818161939-5560c4c073ff
+	github.com/labstack/echo/v4 v4.6.1
 	github.com/lib/pq v1.10.3 // indirect
 	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 	github.com/onsi/gomega v1.16.0 // indirect
