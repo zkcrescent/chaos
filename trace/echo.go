@@ -22,6 +22,10 @@ func EchoTraceMiddleWare() echo.MiddlewareFunc {
 	}
 }
 
+func SetLogger(c echo.Context, l *logrus.Entry) {
+	c.Set(TRACE_LOGGER, l)
+}
+
 func GetLogger(c echo.Context) *logrus.Entry {
 	l, ok := c.Get(TRACE_LOGGER).(*logrus.Entry)
 	if !ok {
