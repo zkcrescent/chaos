@@ -24,6 +24,19 @@ func (c *OssConfig) Client() (*oss.Client, error) {
 	return oss.New(c.Endpoint, c.AccessID, c.AccessKey)
 }
 
+func (c *OssConfig) ClientG() (*oss.Client, error) {
+	client, err := oss.New(c.Endpoint, c.AccessID, c.AccessKey)
+	if err != nil {
+		return nil, err
+	}
+	buk, err := client.Bucket(c.Bucket)
+	if err != nil {
+		return nil, err
+	}
+	Global.FileStore = NewOSSStore(buk)
+	return client, nil
+}
+
 func UploadDir(bucket *oss.Bucket, localdir, ossBaseDir string) error {
 	info, err := ioutil.ReadDir(localdir)
 	if err != nil {

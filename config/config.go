@@ -1,8 +1,10 @@
 package config
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	gorp "gopkg.in/gorp.v2"
 )
 
@@ -10,8 +12,9 @@ import (
 
 // configStore for some common usage in global config
 type configStore struct {
-	HTTP *http.Client
-	DB   *gorp.DbMap
+	HTTP      *http.Client
+	DB        *gorp.DbMap
+	FileStore FileStore
 	// Config for set custom config
 	Config interface{}
 }
@@ -20,4 +23,16 @@ var Global = &configStore{}
 
 func (c *configStore) SetConfig(in interface{}) {
 	c.Config = in
+}
+
+// GetOssBuckt returns FileStore to oss file store or panic
+func (c *configStore) GetOssBuckt() *oss.Bucket {
+	store, ok := c.FileStore.(*OSSStore)
+	if !ok {
+		panic(fmt.Sprintf(
+			"cont convert file store to oss store: current: %v",
+			c.FileStore,
+		))
+	}
+	return store.bucket
 }
