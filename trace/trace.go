@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	TRACE_ID = "trace_id"
+	TRACE_ID     = "trace_id"
+	TRACE_LOGGER = "trace_logger"
 )
 
 func spanName() string {
