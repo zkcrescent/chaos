@@ -75,8 +75,10 @@ func (t {{.Name}}) TableName() string {
 	return fmt.Sprintf("{{.Table}}_%v", t.{{.ShardKey}}%t.Sharding()){{ end }}
 
 	{{ end }}
-	
-	
+}
+
+func (t {{.Name}}) BasicTableName() string {
+	return {{.Table}}
 }
 
 func (t {{.Name}}) VersionField() string {
