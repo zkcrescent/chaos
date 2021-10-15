@@ -209,9 +209,9 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 			switch annotation.Name {
 			case "@TABLE":
 				em.Table = annotation.Key
-			case "@SHARD":
-				em.ShardKey = annotation.Key
 			case "@SHARDING":
+				em.ShardKey = annotation.Key
+			case "@SHARDINGKEY":
 				var err error
 				em.Sharding, err = strconv.Atoi(annotation.Key)
 				if err != nil {
