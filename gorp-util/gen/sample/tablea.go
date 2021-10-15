@@ -11,3 +11,7 @@ type TableA struct {
 	ID    int64  `db:"id"`
 	Field string `db:"field"`
 }
+
+func (a TableA) Shard1() int64 {
+	return 1
+}
