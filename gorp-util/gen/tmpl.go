@@ -62,11 +62,21 @@ func (t {{.Name}}) Sharding() int64 {
 }
 
 func (t {{.Name}}) TableName() string {
-	{{ if eq .Sharding  0 }} return "{{.Table}}" {{ else }} 
+	if t.Sharding() <= 0 {
+	// no sharding key return basic table name
+		return "{{.Table}}"
+	}
+
+	{{ if .IsShardTable }} return fmt.Sprintf("{{.Table}}_%v", t.Shard()) {{else}}
+{{ if eq .Sharding  0 }} return "{{.Table}}" {{ else }}
 	if t.{{.ShardKey}} < 1 {
 		panic("sharding key {{.ShardKey}} smaller than 1")
 	}
 	return fmt.Sprintf("{{.Table}}_%v", t.{{.ShardKey}}%t.Sharding()){{ end }}
+
+	{{ end }}
+	
+	
 }
 
 func (t {{.Name}}) VersionField() string {

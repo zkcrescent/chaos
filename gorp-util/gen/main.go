@@ -61,6 +61,7 @@ func main() {
 		}
 	}
 
+	shardMethods := make(map[string]bool)
 	metas := make(map[string]*entityMeta)
 	for _, filename := range pkg.GoFiles {
 		if strings.HasSuffix(filename, "_gorp.go") {
@@ -74,6 +75,42 @@ func main() {
 		file, err := parser.ParseFile(fs, filename, nil, parser.ParseComments)
 		if err != nil {
 			logrus.Fatalf(errors.ErrorStack(err))
+		}
+
+		for _, decl := range file.Decls {
+			if dec, ok := decl.(*ast.FuncDecl); ok {
+				if dec.Name.Name != "Shard" {
+					continue
+				}
+				if dec.Name.IsExported() && dec.Recv != nil && len(dec.Recv.List) == 1 {
+					if r, ok := dec.Recv.List[0].Type.(*ast.Ident); ok {
+						// unpointer method
+						logrus.Infof("find %v method: %v", r.Name, dec.Name.Name)
+						shardMethods[r.Name] = true
+						if len(dec.Type.Params.List) != 0 {
+							panic(fmt.Sprintf("method Shard of %v must without params", r.Name))
+						}
+
+						if len(dec.Type.Results.List) != 1 {
+							panic(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
+						}
+
+						if res, ok := dec.Type.Results.List[0].Type.(*ast.Ident); ok {
+							if res.Name != "int64" {
+								panic(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
+							}
+						} else {
+							panic(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
+						}
+					}
+					if r, ok := dec.Recv.List[0].Type.(*ast.StarExpr); ok {
+						// pointer method
+						panic(fmt.Sprintf("method Shard of %v must without pointer",
+							r.X.(*ast.Ident).Name))
+					}
+				}
+			}
+
 		}
 
 		// ast.Inspect(file, traverses)
@@ -90,7 +127,7 @@ func main() {
 					if !ok {
 						continue
 					}
-					metas[typeSpec.Name.Name] = parseEntityMeta(pkgName, typeSpec.Name.Name, structType, comments, typeMap)
+					metas[typeSpec.Name.Name] = parseEntityMeta(shardMethods, pkgName, typeSpec.Name.Name, structType, comments, typeMap)
 				}
 			case *ast.TypeSpec:
 				typeSpec := node.(*ast.TypeSpec)
@@ -99,7 +136,7 @@ func main() {
 					continue
 				}
 
-				metas[typeSpec.Name.Name] = parseEntityMeta(pkgName, typeSpec.Name.Name, structType, comments, typeMap)
+				metas[typeSpec.Name.Name] = parseEntityMeta(shardMethods, pkgName, typeSpec.Name.Name, structType, comments, typeMap)
 			}
 		}
 	}
@@ -155,7 +192,7 @@ func main() {
 	}
 }
 
-func parseEntityMeta(pkg string, name string, structType *ast.StructType, commentGroup []*ast.CommentGroup, typeMap map[string]*ast.StructType) *entityMeta {
+func parseEntityMeta(shards map[string]bool, pkg string, name string, structType *ast.StructType, commentGroup []*ast.CommentGroup, typeMap map[string]*ast.StructType) *entityMeta {
 	em := &entityMeta{
 		Pkg:    pkg,
 		Name:   name,
@@ -197,21 +234,24 @@ func parseEntityMeta(pkg string, name string, structType *ast.StructType, commen
 		em.Version = em.Fields["UpdatedSeq"]
 	}
 
+	em.IsShardTable = shards[name]
+
 	return em
 }
 
 type entityMeta struct {
-	Pkg      string
-	Name     string
-	Fields   map[string]string
-	Table    string
-	ShardKey string
-	Sharding int
-	Init     bool
-	ID       string
-	Version  string
-	Rels     map[string]*Ref
-	Muls     []*Mul
+	Pkg          string
+	Name         string
+	Fields       map[string]string
+	Table        string
+	ShardKey     string
+	Sharding     int
+	IsShardTable bool
+	Init         bool
+	ID           string
+	Version      string
+	Rels         map[string]*Ref
+	Muls         []*Mul
 
 	// for tpl
 	Imports []string
@@ -334,4 +374,8 @@ func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) 
 		}
 	}
 	return m
+}
+
+type ShardingTable interface {
+	Shard() int64
 }
