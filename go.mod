@@ -18,6 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/ziutek/mymysql v1.5.4 // indirect
+	google.golang.org/appengine v1.6.7
 	gopkg.in/gorp.v2 v2.2.0
 	gopkg.in/nullbio/null.v6 v6.0.0-20161116030900-40264a2e6b79
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
