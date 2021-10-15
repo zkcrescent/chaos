@@ -78,7 +78,7 @@ func (t {{.Name}}) TableName() string {
 }
 
 func (t {{.Name}}) BasicTableName() string {
-	return {{.Table}}
+	return "{{.Table}}"
 }
 
 func (t {{.Name}}) VersionField() string {
