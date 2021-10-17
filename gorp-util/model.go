@@ -15,6 +15,10 @@ type Table interface {
 	PK() (*Field, interface{})
 }
 
+type ShardingTable interface {
+	Sharding() int64
+}
+
 type Model interface {
 	Table
 	Relation(string) (*Field, bool)                 // fk name, exists

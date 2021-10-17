@@ -218,6 +218,8 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 				if err != nil {
 					panic(err)
 				}
+				em.ShardingIdx = make([]int, em.Sharding)
+
 				logrus.Infof("Table %v find sharding: %v", name, em.Sharding)
 			case "@PK":
 				em.ID = annotation.Key
@@ -229,6 +231,8 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 				em.Muls = append(em.Muls, NewMul(annotation))
 			case "@NOINIT":
 				em.Init = false
+			default:
+				logrus.Fatalf("unknown annotation: %v", annotation.Key)
 			}
 		}
 	}
@@ -248,6 +252,7 @@ type entityMeta struct {
 	Table        string
 	ShardKey     string
 	Sharding     int
+	ShardingIdx  []int
 	IsShardTable bool
 	Init         bool
 	ID           string
@@ -377,8 +382,4 @@ func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) 
 		}
 	}
 	return m
-}
-
-type ShardingTable interface {
-	Shard() int64
 }

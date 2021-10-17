@@ -14,13 +14,26 @@ import (
 
 {{- if .Init }}
 func init() {
-	gorpUtil.Tables.Add({{.Name}}{})
+	var t {{.Name}}
+	if t.Sharding() > 0 {
+		{{- range  $idx, $v := .ShardingIdx }}
+	  gorpUtil.Tables.Add({{$dot.Name}}{
+		{{$dot.ShardKey}}: {{$idx}}+1,
+	  })
+	  	{{- end}}
+	} else {
+	  gorpUtil.Tables.Add({{.Name}}{})
+	}
 }
 
 {{- end }}
 var (
 {{- range $f, $tf := .Fields }}
+	{{if $dot.Sharding }}
+	{{$dot.Name}}_{{$f}}   = gorpUtil.ShardTableField("{{$dot.Table}}", "{{$tf}}", {{$dot.Name}}{})
+	{{else}}
 	{{$dot.Name}}_{{$f}}    = gorpUtil.TableField("{{$dot.Table}}", "{{$tf}}")
+	{{end}}
 {{- end}}
 )
 
@@ -86,7 +99,7 @@ func (t {{.Name}}) VersionField() string {
 }
 
 func (t {{.Name}}) PK() (*gorpUtil.Field, interface{}) {
-	return {{.Name}}_{{.ID}}, t.{{.ID}}
+	return {{.Name}}_{{.ID}}{{if .Sharding}}(t.{{.ID}}){{end}}, t.{{.ID}}
 }
 
 {{ if .Rels }}
@@ -110,7 +123,7 @@ func (t *{{.Name}}) Load(db gorp.SqlExecutor, pk int64) error {
 {{- if .Fields.Removed }}
 		{{.Name}}_Removed.EQ(false),
 {{- end }}
-		{{.Name}}_{{.ID}}.EQ(pk),
+		{{.Name}}_{{.ID}}{{if .Sharding}}(t.{{.ID}}){{end}}.EQ(pk),
 	).Fetch(db), "pk:%d", pk)
 }
 
