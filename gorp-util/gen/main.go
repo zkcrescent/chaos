@@ -211,12 +211,14 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 				em.Table = annotation.Key
 			case "@SHARDINGKEY":
 				em.ShardKey = annotation.Key
+				logrus.Infof("Table %v find sharding key: %v", name, em.ShardKey)
 			case "@SHARDING":
 				var err error
 				em.Sharding, err = strconv.Atoi(annotation.Key)
 				if err != nil {
 					panic(err)
 				}
+				logrus.Infof("Table %v find sharding: %v", name, em.Sharding)
 			case "@PK":
 				em.ID = annotation.Key
 			case "@VER":

@@ -14,11 +14,11 @@ import (
 
 // Logrus config
 type Logrus struct {
-	Env             string           `json:"env" yaml:"env" toml:"env"`
-	Service         string           `json:"service" yaml:"service" toml:"service"`
-	Level           string           `json:"level" yaml:"level" toml:"level"`
-	FileHook        *FileHook        `json:"file_hook" yaml:"file_hook" toml:"file_hook"`
-	DingtalkBotHook *DingtalkBotHook `json:"dingtalk_bot_hook" yaml:"dingtalk_bot_hook" toml:"dingtalk_bot_hook"`
+	Env             string           `json:"env" yaml:"env" toml:"env" xml:"env"`
+	Service         string           `json:"service" yaml:"service" toml:"service" xml:"service"`
+	Level           string           `json:"level" yaml:"level" toml:"level" xml:"level"`
+	FileHook        *FileHook        `json:"file_hook" yaml:"file_hook" toml:"file_hook" xml:"file_hook"`
+	DingtalkBotHook *DingtalkBotHook `json:"dingtalk_bot_hook" yaml:"dingtalk_bot_hook" toml:"dingtalk_bot_hook" xml:"dingtalk_bot_hook"`
 }
 
 // Logrus config

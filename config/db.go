@@ -11,18 +11,18 @@ import (
 
 // Database for basic innoDB mysql
 type Database struct {
-	DSN         string        `json:"dsn" yaml:"dsn" valid:"required" toml:"dsn"`
-	MaxConnLife time.Duration `json:"max_conn_life" yaml:"max_conn_life" valid:"required" toml:"max_conn_life"`
-	MaxConn     int           `json:"max_conn" yaml:"max_conn" valid:"required" toml:"max_conn"`
-	MaxIdle     int           `json:"max_idle" yaml:"max_idle" valid:"required" toml:"max_idle"`
+	DSN         string        `json:"dsn" yaml:"dsn" valid:"required" toml:"dsn" xml:"dsn"`
+	MaxConnLife time.Duration `json:"max_conn_life" yaml:"max_conn_life" valid:"required" toml:"max_conn_life" xml:"max_conn_life"`
+	MaxConn     int           `json:"max_conn" yaml:"max_conn" valid:"required" toml:"max_conn" xml:"max_conn"`
+	MaxIdle     int           `json:"max_idle" yaml:"max_idle" valid:"required" toml:"max_idle" xml:"max_idle"`
 }
 
 func (c *Database) UnmarshalJSON(b []byte) error {
 	d := &struct {
-		DSN         string      `json:"dsn" yaml:"dsn" valid:"required" toml:"dsn"`
-		MaxConnLife interface{} `json:"max_conn_life" yaml:"max_conn_life" valid:"required" toml:"max_conn_life"`
-		MaxConn     int         `json:"max_conn" yaml:"max_conn" valid:"required" toml:"max_conn"`
-		MaxIdle     int         `json:"max_idle" yaml:"max_idle" valid:"required" toml:"max_idle"`
+		DSN         string      `json:"dsn" yaml:"dsn" valid:"required" toml:"dsn" xml:"dsn"`
+		MaxConnLife interface{} `json:"max_conn_life" yaml:"max_conn_life" valid:"required" toml:"max_conn_life" xml:"max_conn_life"`
+		MaxConn     int         `json:"max_conn" yaml:"max_conn" valid:"required" toml:"max_conn" xml:"max_conn"`
+		MaxIdle     int         `json:"max_idle" yaml:"max_idle" valid:"required" toml:"max_idle" xml:"max_idle"`
 	}{}
 
 	if err := json.Unmarshal(b, d); err != nil {

@@ -12,10 +12,10 @@ const (
 )
 
 type HTTPClient struct {
-	Timeout             float64 `json:"timeout" yaml:"timeout" toml:"timeout"`
-	DialTimeout         float64 `json:"dial_timeout" yaml:"dial_timeout" toml:"dial_timeout"`
-	TLSHandshakeTimeout float64 `json:"tls_handshake_timeout" yaml:"tls_handshake_timeout" toml:"tls_handshake_timeout"`
-	DisableKeepAlives   bool    `json:"disable_keep_alives" yaml:"disable_keep_alives" toml:"disable_keep_alives"`
+	Timeout             float64 `json:"timeout" yaml:"timeout" toml:"timeout" xml:"timeout"`
+	DialTimeout         float64 `json:"dial_timeout" yaml:"dial_timeout" toml:"dial_timeout" xml:"dial_timeout"`
+	TLSHandshakeTimeout float64 `json:"tls_handshake_timeout" yaml:"tls_handshake_timeout" toml:"tls_handshake_timeout" xml:"tls_handshake_timeout"`
+	DisableKeepAlives   bool    `json:"disable_keep_alives" yaml:"disable_keep_alives" toml:"disable_keep_alives" xml:"disable_keep_alives"`
 }
 
 func (c *HTTPClient) Validate() error {

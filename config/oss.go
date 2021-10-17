@@ -14,10 +14,10 @@ import (
 )
 
 type OssConfig struct {
-	Endpoint  string `json:"endpoint" yaml:"endpoint" toml:"endpoint"`
-	AccessID  string `json:"access_id" yaml:"access_id" toml:"access_id"`
-	AccessKey string `json:"access_key" yaml:"access_key" toml:"access_key"`
-	Bucket    string `json:"bucket" yaml:"bucket" toml:"bucket"`
+	Endpoint  string `json:"endpoint" yaml:"endpoint" toml:"endpoint" xml:"endpoint"`
+	AccessID  string `json:"access_id" yaml:"access_id" toml:"access_id" xml:"access_id"`
+	AccessKey string `json:"access_key" yaml:"access_key" toml:"access_key" xml:"access_key"`
+	Bucket    string `json:"bucket" yaml:"bucket" toml:"bucket" xml:"bucket"`
 }
 
 func (c *OssConfig) Client() (*oss.Client, error) {
