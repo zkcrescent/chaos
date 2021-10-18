@@ -3,6 +3,7 @@ package sample
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/juju/errors"
 	"github.com/zkcrescent/chaos/gorp-util"
 	"gopkg.in/gorp.v2"
@@ -37,6 +38,18 @@ func (t TableAC) Fields() []string {
 
 		"table_ac.id",
 	}
+}
+func (t TableAC) Field_aid() string {
+	return fmt.Sprintf("%v.aid", t.TableName())
+}
+func (t TableAC) Field_cid() string {
+	return fmt.Sprintf("%v.cid", t.TableName())
+}
+func (t TableAC) Field_field() string {
+	return fmt.Sprintf("%v.field", t.TableName())
+}
+func (t TableAC) Field_id() string {
+	return fmt.Sprintf("%v.id", t.TableName())
 }
 
 func (t TableAC) Sharding() int64 {

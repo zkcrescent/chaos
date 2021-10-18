@@ -52,6 +52,12 @@ func (t TableA) Fields() []string {
 		fmt.Sprintf("%v.id", t.TableName()),
 	}
 }
+func (t TableA) Field_field() string {
+	return fmt.Sprintf("%v.field", t.TableName())
+}
+func (t TableA) Field_id() string {
+	return fmt.Sprintf("%v.id", t.TableName())
+}
 
 func (t TableA) Sharding() int64 {
 	return 1
