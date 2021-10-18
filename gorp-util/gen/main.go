@@ -317,11 +317,13 @@ func (e *entityMeta) generate(tpl *template.Template) {
 		e.ID = "ID"
 	}
 	e.Imports = []string{
-		"fmt",
 		"encoding/json",
 		"github.com/zkcrescent/chaos/gorp-util",
 		"github.com/juju/errors",
 		"gopkg.in/gorp.v2",
+	}
+	if e.Sharding > 0 || e.IsShardTable {
+		e.Imports = append([]string{"fmt"}, e.Imports...)
 	}
 
 	//if (e.Fields["CreatedTime"] + e.Fields["UpdatedTime"] + e.Fields["RemovedTime"]) != "" {

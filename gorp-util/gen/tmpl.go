@@ -69,14 +69,15 @@ func (t {{.Name}}) Fields() []string {
 
 {{- range $f, $tf := .Fields }}
 
-func (t {{$dot.Name}}) Field_{{$tf}}() *gorpUtil.Field {
+func (t {{$dot.Name}}) Field_{{$f}}() *gorpUtil.Field {
 	{{ if $dot.Sharding }} return	{{$dot.Name}}_{{$f}}(t.{{$dot.ShardKey}}) {{else}} return	{{$dot.Name}}_{{$f}} {{end}}
 }
 {{- end}}
 
 {{if .Sharding }}
-func (t {{$dot.Name}}) SetShard(shard int64) {
+func (t *{{$dot.Name}}) SetShard(shard int64) *{{$dot.Name}} {
 	t.{{$dot.ShardKey}} = shard
+	return t
 }
 {{end}}
 
