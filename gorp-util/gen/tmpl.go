@@ -65,7 +65,11 @@ const (
 func (t {{.Name}}) Fields() []string {
 	return []string{
 {{- range $f, $tf := .Fields }}
+		{{if $dot.Sharding}}
+		fmt.Sprintf("%v.{{$tf}}", t.TableName()),
+		{{else}}
 		"{{$dot.Table}}.{{$tf}}",
+		{{end}}
 {{- end}}
 	}
 }

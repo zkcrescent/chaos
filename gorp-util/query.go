@@ -36,7 +36,15 @@ const (
 	DESC = "desc"
 )
 
+type QueryCol map[*Field]interface{}
+
+type queryCol struct {
+	field  *Field
+	holder interface{}
+}
+
 type Query struct {
+	onlyFields         []*queryCol // 自选映射字段
 	model              Model
 	rels               []*Relation
 	conditions         []*Condition
@@ -66,6 +74,19 @@ func Rel(m Model, edge string) *Query {
 func (q *Query) Fork() *Query {
 	nq := *q
 	return &nq
+}
+
+// Only for query given field, args must be Find, hoder,Field, hoder...
+func (q *Query) Only(cols QueryCol) *Query {
+	// lazy init
+	for k, v := range cols {
+		q.onlyFields = append(q.onlyFields, &queryCol{
+			field:  k,
+			holder: v,
+		})
+	}
+
+	return q
 }
 
 func (q *Query) Pagination(page, size int) *Query {
@@ -192,6 +213,14 @@ func (q *Query) modelFields(prefix ...string) []string {
 
 func (q *Query) QueryFields() ([]string, error) {
 	var fields []string
+
+	if len(q.onlyFields) != 0 {
+		for _, v := range q.onlyFields {
+			fields = append(fields, v.field.String())
+		}
+		return fields, nil
+	}
+
 	if !q.withoutModelFields {
 		fields = q.model.Fields()
 	}
@@ -303,12 +332,26 @@ func (q *Query) Fetch(db gorp.SqlExecutor, placeholders ...interface{}) error {
 		return err
 	}
 	//fmt.Println("fetch", query)
-	err = db.SelectOne(holder, query, vals...)
+	if len(q.onlyFields) != 0 {
+		err = q.queryRow(db, query, vals)
+	} else {
+		err = db.SelectOne(holder, query, vals...)
+	}
+
 	if err != nil {
 		return q.QueryValError(err, query, vals)
 	}
 
 	return err
+}
+
+func (q *Query) queryRow(db gorp.SqlExecutor, query string, args []interface{}) error {
+	row := db.QueryRow(query, args...)
+	var res []interface{}
+	for _, v := range q.onlyFields {
+		res = append(res, v.holder)
+	}
+	return row.Scan(res...)
 }
 
 func (q *Query) QueryError(err error, qs string) error {
