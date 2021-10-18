@@ -74,6 +74,12 @@ func (t {{$dot.Name}}) Field_{{$tf}}() *gorpUtil.Field {
 }
 {{- end}}
 
+{{if .Sharding }}
+func (t {{$dot.Name}}) SetShard(shard int64) {
+	t.{{$dot.ShardKey}} = shard
+}
+{{end}}
+
 func (t {{.Name}}) Sharding() int64 {
 	return {{.Sharding}}
 }
