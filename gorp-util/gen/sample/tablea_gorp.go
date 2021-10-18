@@ -22,8 +22,7 @@ func init() {
 
 var (
 	TableA_Field = gorpUtil.ShardTableField("table_a", "field", TableA{})
-
-	TableA_ID = gorpUtil.ShardTableField("table_a", "id", TableA{})
+	TableA_ID    = gorpUtil.ShardTableField("table_a", "id", TableA{})
 )
 
 // Edge names
@@ -46,17 +45,17 @@ const (
 
 func (t TableA) Fields() []string {
 	return []string{
-
 		fmt.Sprintf("%v.field", t.TableName()),
-
 		fmt.Sprintf("%v.id", t.TableName()),
 	}
 }
-func (t TableA) Field_field() string {
-	return fmt.Sprintf("%v.field", t.TableName())
+
+func (t TableA) Field_field() *gorpUtil.Field {
+	return TableA_Field(t.ID)
 }
-func (t TableA) Field_id() string {
-	return fmt.Sprintf("%v.id", t.TableName())
+
+func (t TableA) Field_id() *gorpUtil.Field {
+	return TableA_ID(t.ID)
 }
 
 func (t TableA) Sharding() int64 {

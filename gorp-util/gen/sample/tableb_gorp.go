@@ -27,22 +27,22 @@ var (
 
 func (t TableB) Fields() []string {
 	return []string{
-
 		"table_b.aid",
-
 		"table_b.field",
-
 		"table_b.id",
 	}
 }
-func (t TableB) Field_aid() string {
-	return fmt.Sprintf("%v.aid", t.TableName())
+
+func (t TableB) Field_aid() *gorpUtil.Field {
+	return TableB_AID
 }
-func (t TableB) Field_field() string {
-	return fmt.Sprintf("%v.field", t.TableName())
+
+func (t TableB) Field_field() *gorpUtil.Field {
+	return TableB_Field
 }
-func (t TableB) Field_id() string {
-	return fmt.Sprintf("%v.id", t.TableName())
+
+func (t TableB) Field_id() *gorpUtil.Field {
+	return TableB_ID
 }
 
 func (t TableB) Sharding() int64 {
