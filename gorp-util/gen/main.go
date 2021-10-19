@@ -232,7 +232,7 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 			case "@NOINIT":
 				em.Init = false
 			default:
-				logrus.Fatalf("unknown annotation: %v", annotation.Key)
+				logrus.Fatalf("unknown annotation: %v", annotation.Name)
 			}
 		}
 	}
