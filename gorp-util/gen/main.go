@@ -85,10 +85,6 @@ func main() {
 				}
 				if dec.Name.IsExported() && dec.Recv != nil && len(dec.Recv.List) == 1 {
 					if r, ok := dec.Recv.List[0].Type.(*ast.Ident); ok {
-						if dec.Name.Name == "ShardInit" {
-							logrus.Fatalf(fmt.Sprintf("method %v of %v must with pointer",
-								dec.Name.Name, r.Name))
-						}
 						// unpointer method
 						logrus.Infof("find %v method: %v", r.Name, dec.Name.Name)
 						if dec.Name.Name == "Shard" {
