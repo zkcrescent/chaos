@@ -27,7 +27,7 @@ func init() {
 {{- end }}
 var (
 {{- range $f, $tf := .Fields }}
-	{{if $dot.Sharding }} {{$dot.Name}}_{{$f}}   = gorpUtil.ShardTableField("{{$dot.Table}}", "{{$tf}}", {{$dot.Name}}{}) {{else}} {{$dot.Name}}_{{$f}}    = gorpUtil.TableField("{{$dot.Table}}", "{{$tf}}")
+	{{if $dot.Sharding }} {{$dot.Name}}_{{$f}}   = gorpUtil.ShardTableField("{{$dot.Table}}", "{{$tf}}", {{$dot.Sharding}}) {{else}} {{$dot.Name}}_{{$f}}    = gorpUtil.TableField("{{$dot.Table}}", "{{$tf}}")
 	{{end}}
 {{- end}}
 )
@@ -68,11 +68,17 @@ func (t {{.Name}}) Fields() []string {
 {{- range $f, $tf := .Fields }}
 
 func (t {{$dot.Name}}) Field_{{$f}}() *gorpUtil.Field {
-	{{ if $dot.Sharding }} return	{{$dot.Name}}_{{$f}}(t.{{$dot.ShardKey}}) {{else}} return	{{$dot.Name}}_{{$f}} {{end}}
+	{{ if $dot.Sharding }} return	{{$dot.Name}}_{{$f}}(t.Shard()) {{else}} return	{{$dot.Name}}_{{$f}} {{end}}
 }
 {{- end}}
 
 {{if .Sharding }}
+	{{- if .IsShardTable }}
+	{{- else}}
+func (t {{$dot.Name}}) Shard() int64 {
+	return t.{{$dot.ShardKey}}
+}
+	{{- end}}
 func (t *{{$dot.Name}}) SetShard(shard int64) *{{$dot.Name}} {
 	t.{{$dot.ShardKey}} = shard
 	return t

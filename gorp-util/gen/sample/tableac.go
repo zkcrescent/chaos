@@ -1,6 +1,8 @@
 package sample
 
 //@TABLE(table_ac)
+//@SHARDING(15)
+//@SHARDINGKEY(ID)
 //@PK(ID)
 type TableAC struct {
 	ID    int64  `db:"id"`

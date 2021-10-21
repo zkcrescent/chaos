@@ -26,14 +26,14 @@ type Field struct {
 	method *FieldMethod
 }
 
-func ShardTableField(table string, key string, t ShardingTable) func(int64) *Field {
+func ShardTableField(table string, key string, sharding int64) func(int64) *Field {
 	return func(shardkey int64) *Field {
 		f := &Field{
 			key:   key,
 			table: table,
 		}
 		if table != "" {
-			f.full = fmt.Sprintf("%v_%v.%v", table, shardkey%t.Sharding(), key)
+			f.full = fmt.Sprintf("%v_%v.%v", table, shardkey%shardkey, key)
 		} else {
 			f.full = key
 		}

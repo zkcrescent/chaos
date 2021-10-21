@@ -18,7 +18,7 @@ func (a TableA) Shard() int64 {
 
 // ShardInit for init shard table
 // ranged 1 to Shard{}
-func (a *TableA) ShardInit(aa int64) TableA {
+func (a TableA) ShardInit(aa int64) TableA {
 	return TableA{
 		ID: aa,
 	}
