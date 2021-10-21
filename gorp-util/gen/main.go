@@ -62,6 +62,7 @@ func main() {
 	}
 
 	shardMethods := make(map[string]bool)
+	shardInit := make(map[string]bool)
 	metas := make(map[string]*entityMeta)
 	for _, filename := range pkg.GoFiles {
 		if strings.HasSuffix(filename, "_gorp.go") {
@@ -79,38 +80,79 @@ func main() {
 
 		for _, decl := range file.Decls {
 			if dec, ok := decl.(*ast.FuncDecl); ok {
-				if dec.Name.Name != "Shard" {
+				if dec.Name.Name != "Shard" && dec.Name.Name != "ShardInit" {
 					continue
 				}
 				if dec.Name.IsExported() && dec.Recv != nil && len(dec.Recv.List) == 1 {
 					if r, ok := dec.Recv.List[0].Type.(*ast.Ident); ok {
+						if dec.Name.Name == "ShardInit" {
+							logrus.Fatalf(fmt.Sprintf("method %v of %v must with pointer",
+								dec.Name.Name, r.Name))
+						}
 						// unpointer method
 						logrus.Infof("find %v method: %v", r.Name, dec.Name.Name)
-						shardMethods[r.Name] = true
-						if len(dec.Type.Params.List) != 0 {
-							panic(fmt.Sprintf("method Shard of %v must without params", r.Name))
-						}
-
-						if len(dec.Type.Results.List) != 1 {
-							panic(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
-						}
-
-						if res, ok := dec.Type.Results.List[0].Type.(*ast.Ident); ok {
-							if res.Name != "int64" {
-								panic(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
+						if dec.Name.Name == "Shard" {
+							shardMethods[r.Name] = true
+							if dec.Type.Params != nil && len(dec.Type.Params.List) != 0 {
+								logrus.Fatalf(fmt.Sprintf("method Shard of %v must without params", r.Name))
 							}
-						} else {
-							panic(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
+
+							if dec.Type.Results == nil || len(dec.Type.Results.List) != 1 {
+								logrus.Fatalf(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
+							}
+
+							if res, ok := dec.Type.Results.List[0].Type.(*ast.Ident); ok {
+								if res.Name != "int64" {
+									logrus.Fatalf(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
+								}
+							} else {
+								logrus.Fatalf(fmt.Sprintf("method Shard of %v must has 1 result of int64", r.Name))
+							}
 						}
+
 					}
-					if r, ok := dec.Recv.List[0].Type.(*ast.StarExpr); ok {
-						// pointer method
-						panic(fmt.Sprintf("method Shard of %v must without pointer",
-							r.X.(*ast.Ident).Name))
+					if rr, ok := dec.Recv.List[0].Type.(*ast.StarExpr); ok {
+						if dec.Name.Name == "Shard" {
+							logrus.Fatalf(fmt.Sprintf("method %v of %v must with pointer",
+								dec.Name.Name, rr.X.(*ast.Ident).Name))
+						}
+						r := rr.X.(*ast.Ident)
+						if dec.Name.Name == "ShardInit" {
+							shardInit[r.Name] = true
+							if dec.Type.Params == nil || len(dec.Type.Params.List) != 1 {
+								logrus.Fatalf(fmt.Sprintf("method ShardInit of %v must without 1 params of int64", r.Name))
+							}
+
+							if dec.Type.Results == nil || len(dec.Type.Results.List) != 1 {
+								logrus.Fatalf(fmt.Sprintf("method Shard of %v must with 1 result of %v(no pointer)", r.Name, r.Name))
+							}
+
+							if res, ok := dec.Type.Params.List[0].Type.(*ast.Ident); ok {
+								if res.Name != "int64" {
+									logrus.Fatalf(fmt.Sprintf("method ShardInit of %v must has 1 params of int64", r.Name))
+								}
+							} else {
+								logrus.Fatalf(fmt.Sprintf("method ShardInit of %v must has 1 params of int64", r.Name))
+							}
+
+							if res, ok := dec.Type.Results.List[0].Type.(*ast.Ident); ok {
+								if res.Name != r.Name {
+									logrus.Fatalf(fmt.Sprintf("method ShardInit of %v must has 1 result of %v(no pointer)", r.Name, r.Name))
+								}
+							} else {
+								logrus.Fatalf(fmt.Sprintf("method Shard of %v must has 1 result of %v(no pointer)", r.Name, r.Name))
+							}
+						}
 					}
 				}
 			}
 
+		}
+
+		for k := range shardMethods {
+			if !shardInit[k] {
+				panic(fmt.Sprintf("shard of %v must has ShardInit method", k))
+			}
 		}
 
 		// ast.Inspect(file, traverses)
@@ -235,6 +277,10 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 				logrus.Fatalf("unknown annotation: %v", annotation.Name)
 			}
 		}
+	}
+
+	if em.ShardKey == "" && em.Sharding > 0 {
+		logrus.Fatalf("SHARDING needing SHARDINGKEY")
 	}
 	if em.Version == "" && em.Fields["UpdatedSeq"] != "" {
 		em.Version = em.Fields["UpdatedSeq"]

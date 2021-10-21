@@ -12,6 +12,14 @@ type TableA struct {
 	Field string `db:"field"`
 }
 
-func (a TableA) Shard1() int64 {
+func (a TableA) Shard() int64 {
 	return 1
+}
+
+// ShardInit for init shard table
+// ranged 1 to Shard{}
+func (a *TableA) ShardInit(aa int64) TableA {
+	return TableA{
+		ID: aa,
+	}
 }

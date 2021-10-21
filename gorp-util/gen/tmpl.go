@@ -17,9 +17,7 @@ func init() {
 	var t {{.Name}}
 	if t.Sharding() > 0 {
 		{{- range  $idx, $v := .ShardingIdx }}
-	  gorpUtil.Tables.Add({{$dot.Name}}{
-		{{$dot.ShardKey}}: {{$idx}}+1,
-	  })
+			{{ if $dot.IsShardTable }} gorpUtil.Tables.Add(t.ShardInit({{$idx}}+1)) {{else}} gorpUtil.Tables.Add({{$dot.Name}}{ {{$dot.ShardKey}}: {{$idx}}+1, }) {{end}}
 	  	{{- end}}
 	} else {
 	  gorpUtil.Tables.Add({{.Name}}{})
