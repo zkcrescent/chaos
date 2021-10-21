@@ -110,13 +110,6 @@ func main() {
 							}
 						}
 
-					}
-					if rr, ok := dec.Recv.List[0].Type.(*ast.StarExpr); ok {
-						if dec.Name.Name == "Shard" {
-							logrus.Fatalf(fmt.Sprintf("method %v of %v must with pointer",
-								dec.Name.Name, rr.X.(*ast.Ident).Name))
-						}
-						r := rr.X.(*ast.Ident)
 						if dec.Name.Name == "ShardInit" {
 							shardInit[r.Name] = true
 							if dec.Type.Params == nil || len(dec.Type.Params.List) != 1 {
@@ -143,6 +136,18 @@ func main() {
 								logrus.Fatalf(fmt.Sprintf("method Shard of %v must has 1 result of %v(no pointer)", r.Name, r.Name))
 							}
 						}
+
+					}
+					if rr, ok := dec.Recv.List[0].Type.(*ast.StarExpr); ok {
+						if dec.Name.Name == "Shard" {
+							logrus.Fatalf(fmt.Sprintf("method %v of %v must with pointer",
+								dec.Name.Name, rr.X.(*ast.Ident).Name))
+						}
+						if dec.Name.Name == "ShardInit" {
+							logrus.Fatalf(fmt.Sprintf("method %v of %v must with pointer",
+								dec.Name.Name, rr.X.(*ast.Ident).Name))
+						}
+
 					}
 				}
 			}
