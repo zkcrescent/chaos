@@ -136,7 +136,7 @@ func (t *{{.Name}}) Relation(edge string) (*gorpUtil.Field, bool) {
 func (t *{{.Name}}) Load(db gorp.SqlExecutor, pk int64) error {
 	return errors.Annotatef(t.Where(
 {{- if .Fields.Removed }}
-		{{.Name}}_Removed.EQ(false),
+	{{if .Sharding }} {{.Name}}_Removed(t.Shard()).EQ(false), {{else}} {{.Name}}_Removed.EQ(false), {{end}}
 {{- end }}
 		{{.Name}}_{{.ID}}{{if .Sharding}}(t.{{.ID}}){{end}}.EQ(pk),
 	).Fetch(db), "pk:%d", pk)

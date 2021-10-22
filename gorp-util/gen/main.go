@@ -290,8 +290,7 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 	if em.ShardKey != "" {
 		var ok bool
 		for _, v := range structType.Fields.List {
-
-			if v.Names[0].Name == em.ShardKey {
+			if len(v.Names) > 0 && v.Names[0].Name == em.ShardKey {
 				s := fmt.Sprintf("%v", v.Type)
 				if tp, ok := v.Type.(*ast.StarExpr); ok {
 					s = fmt.Sprintf("*%s", tp.X.(*ast.Ident).Name)
