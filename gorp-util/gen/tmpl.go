@@ -79,7 +79,7 @@ func (t {{$dot.Name}}) Shard() int64 {
 	return t.{{$dot.ShardKey}}
 }
 	{{- end}}
-func (t *{{$dot.Name}}) SetShard(shard int64) *{{$dot.Name}} {
+func (t *{{$dot.Name}}) SetShard(shard {{.ShardKeyTp}}) *{{$dot.Name}} {
 	t.{{$dot.ShardKey}} = shard
 	return t
 }

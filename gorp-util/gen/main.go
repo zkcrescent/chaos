@@ -152,7 +152,7 @@ func main() {
 
 		for k := range shardMethods {
 			if !shardInit[k] {
-				panic(fmt.Sprintf("shard of %v must has ShardInit method", k))
+				logrus.Fatalf(fmt.Sprintf("shard of %v must has ShardInit method", k))
 			}
 		}
 
@@ -287,6 +287,29 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 		em.Version = em.Fields["UpdatedSeq"]
 	}
 
+	if em.ShardKey != "" {
+		var ok bool
+		for _, v := range structType.Fields.List {
+
+			if v.Names[0].Name == em.ShardKey {
+				s := fmt.Sprintf("%v", v.Type)
+				if tp, ok := v.Type.(*ast.StarExpr); ok {
+					s = fmt.Sprintf("*%s", tp.X.(*ast.Ident).Name)
+				}
+				if tp, ok := v.Type.(*ast.Ident); ok {
+					s = tp.Name
+				}
+				logrus.Infof("type of Shardkey %v of struct %v is %v", em.ShardKey, em.Name, s)
+				em.ShardKeyTp = s
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			logrus.Fatalf("shard key %v of struct %v must in struct fields", em.ShardKey, em.Name)
+		}
+	}
+
 	em.IsShardTable = shards[name]
 
 	return em
@@ -306,6 +329,7 @@ type entityMeta struct {
 	Version      string
 	Rels         map[string]*Ref
 	Muls         []*Mul
+	ShardKeyTp   string
 
 	// for tpl
 	Imports []string
