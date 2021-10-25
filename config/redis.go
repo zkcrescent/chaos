@@ -46,7 +46,30 @@ func (c Redis) Client() (*redis.Client, error) {
 		IdleCheckFrequency: c.IdleCheckFrequency,
 	})
 	_, err := cli.Ping(context.Background()).Result()
-	if err == nil && Global.Redis == nil {
+	return cli, err
+}
+
+func (c Redis) GClient() (*redis.Client, error) {
+	cli := redis.NewClient(&redis.Options{
+		Network:            c.Network,
+		Addr:               c.Addr,
+		Password:           c.Password,
+		DB:                 c.DB,
+		MaxRetries:         c.MaxRetries,
+		MinRetryBackoff:    c.MinRetryBackoff,
+		MaxRetryBackoff:    c.MaxRetryBackoff,
+		DialTimeout:        c.DialTimeout,
+		ReadTimeout:        c.ReadTimeout,
+		WriteTimeout:       c.WriteTimeout,
+		PoolSize:           c.PoolSize,
+		MinIdleConns:       c.MinIdleConns,
+		MaxConnAge:         c.MaxConnAge,
+		PoolTimeout:        c.PoolTimeout,
+		IdleTimeout:        c.IdleTimeout,
+		IdleCheckFrequency: c.IdleCheckFrequency,
+	})
+	_, err := cli.Ping(context.Background()).Result()
+	if err == nil {
 		Global.Redis = cli
 	}
 	return cli, err
