@@ -83,6 +83,61 @@ func (t *{{$dot.Name}}) SetShard(shard {{.ShardKeyTp}}) *{{$dot.Name}} {
 	t.{{$dot.ShardKey}} = shard
 	return t
 }
+
+func (t {{$dot.Name}}) SetAutoIncrement(db gorp.SqlExecutor) error {
+	if _, err := db.Exec(
+		fmt.Sprintf("set auto_increment_increment = %d", t.Sharding()),
+	); err != nil {
+		return errors.Annotate(err, "set auto_increment_increment to shard")
+	}
+	offset := t.Shard()
+	if offset == 0 {
+		offset = 16
+	}
+	if _, err := db.Exec(
+		fmt.Sprintf("set auto_increment_offset = %d", offset),
+	); err != nil {
+		return errors.Annotate(err, "set auto_increment_off to shard")
+	}
+	return nil
+}
+
+func (t {{$dot.Name}}) UnsetAutoIncrement(db gorp.SqlExecutor) error {
+	if _, err := db.Exec("set auto_increment_increment = 1"); err != nil {
+		return errors.Annotate(err, "set auto_increment_increment to 1")
+	}
+	
+	if _, err := db.Exec("set auto_increment_offset = 1"); err != nil {
+		return errors.Annotate(err, "set auto_increment_off to 1")
+	}
+	return nil
+}
+
+
+func (t *{{.Name}}) ShardInsert(db gorp.SqlExecutor) error {
+{{ if $dot.Fields.CreatedTime }}
+	if !t.CreatedTime.Valid {
+		t.CreatedTime = gorpUtil.Now()
+	}
+{{- end }}
+{{- if $dot.Fields.UpdatedTime }}
+	t.UpdatedTime = gorpUtil.Now()
+{{- end }}
+	if err := t.SetAutoIncrement(db); err != nil {
+		return err
+	}
+	err := db.Insert(t)
+	if err != nil {
+		return errors.Annotate(db.Insert(t), t.String())
+	}
+	if err := t.UnsetAutoIncrement(db); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
 {{end}}
 
 func (t {{.Name}}) Sharding() int64 {
@@ -111,6 +166,10 @@ func (t {{.Name}}) BasicTableName() string {
 
 func (t {{.Name}}) VersionField() string {
     return "{{.Version}}"
+}
+
+func (t {{.Name}}) Version() int64 {
+	{{ if .Version }} return t.{{.VersionKey}} {{else}} return 0 {{end}}
 }
 
 func (t {{.Name}}) PK() (*gorpUtil.Field, interface{}) {

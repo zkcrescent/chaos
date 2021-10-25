@@ -43,6 +43,10 @@ func (t *TableA) VersionField() string {
 	return ""
 }
 
+func (t *TableA) Version() int64 {
+	return 0
+}
+
 func (t *TableA) Fields() []string {
 	return []string{
 		"table_a.id",

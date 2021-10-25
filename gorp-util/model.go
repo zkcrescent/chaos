@@ -12,6 +12,7 @@ type Table interface {
 	TableName() string
 	Fields() []string
 	VersionField() string
+	Version() int64
 	PK() (*Field, interface{})
 }
 

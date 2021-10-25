@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/go-redis/redis/v8"
 	gorp "gopkg.in/gorp.v2"
 )
 
@@ -15,6 +16,7 @@ type configStore struct {
 	HTTP      *http.Client
 	DB        *gorp.DbMap
 	FileStore FileStore
+	Redis     *redis.Client
 	// Config for set custom config
 	Config interface{}
 }

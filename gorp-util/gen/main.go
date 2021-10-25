@@ -268,6 +268,8 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 				em.ID = annotation.Key
 			case "@VER":
 				em.Version = annotation.Key
+			case "@VERKEY":
+				em.VersionKey = annotation.Key
 			case "@REL":
 				em.Rels[annotation.Key] = NewRef(annotation.Vals[0])
 			case "@MUL":
@@ -285,6 +287,10 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 	}
 	if em.Version == "" && em.Fields["UpdatedSeq"] != "" {
 		em.Version = em.Fields["UpdatedSeq"]
+		em.VersionKey = "UpdatedSeq"
+	}
+	if em.Version != "" && em.VersionKey == "" {
+		logrus.Fatal("@VER must with @VERKEY")
 	}
 
 	if em.ShardKey != "" {
@@ -326,6 +332,7 @@ type entityMeta struct {
 	Init         bool
 	ID           string
 	Version      string
+	VersionKey   string
 	Rels         map[string]*Ref
 	Muls         []*Mul
 	ShardKeyTp   string

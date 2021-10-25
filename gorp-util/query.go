@@ -253,6 +253,36 @@ func (q *Query) valQuery() (string, []interface{}, error) {
 	return q.fieldQuery(false, fields...)
 }
 
+func (q *Query) whereQuery(withVal bool) (string, []interface{}, error) {
+	var rc []*Condition
+	if len(q.conditions) > 0 {
+		rc = append(rc, q.conditions...)
+	} else {
+		return "", nil, nil
+	}
+	var query string
+	var vals []interface{}
+	for i, c := range rc {
+		var (
+			cs    string
+			_vals []interface{}
+			err   error
+		)
+		if withVal {
+			cs, err = c.String(i)
+		} else {
+			cs, _vals, err = c.ValString(i)
+			vals = append(vals, _vals...)
+		}
+		if err != nil {
+			return "", nil, err
+		}
+
+		query = fmt.Sprintf("%v%v", query, cs)
+	}
+	return query, vals, nil
+}
+
 func (q *Query) fieldQuery(withVal bool, fields ...string) (string, []interface{}, error) {
 	if q.model == nil {
 		return "", nil, ErrNilModel
@@ -278,7 +308,7 @@ func (q *Query) fieldQuery(withVal bool, fields ...string) (string, []interface{
 			tn = fmt.Sprintf("%v %v", tn, strings.Join(joins, " "))
 		}
 	}
-	if q.conditions != nil && len(q.conditions) > 0 {
+	if len(q.conditions) > 0 {
 		rc = append(rc, q.conditions...)
 	}
 	if len(rc) > 0 {
@@ -343,6 +373,41 @@ func (q *Query) Fetch(db gorp.SqlExecutor, placeholders ...interface{}) error {
 	}
 
 	return err
+}
+
+func (q *Query) Update(db gorp.SqlExecutor) error {
+	if len(q.onlyFields) == 0 {
+		_, err := db.Update(q.model)
+		return err
+	}
+	var fields []string
+	var args []interface{}
+	var query string
+	for _, v := range q.onlyFields {
+		args = append(args, v.holder)
+		fields = append(fields, fmt.Sprintf("`%s`= ?", v.field.String()))
+	}
+	where, holders, err := q.whereQuery(false)
+	if err != nil {
+		return err
+	}
+	args = append(holders, args...)
+	var sql string
+	if where != "" {
+		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s AND %s", q.model.TableName(), strings.Join(fields, ","), where, query)
+	} else {
+		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s", q.model.TableName(), strings.Join(fields, ","), query)
+	}
+	if q.model.VersionField() != "" {
+		sql = fmt.Sprintf("%s AND `%s`=%v", sql, q.model.VersionField(), q.model.Version())
+	}
+
+	if _, err := db.Exec(sql, args...); err != nil {
+		return q.QueryError(err, sql)
+	}
+
+	return nil
+
 }
 
 func (q *Query) queryRow(db gorp.SqlExecutor, query string, args []interface{}) error {
