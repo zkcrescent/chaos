@@ -178,7 +178,11 @@ func (t {{.Name}}) NoPK() bool {
 }
 
 func (t {{.Name}}) PK() (*gorpUtil.Field, interface{}) {
+	{{if .NoPK}}
+	panic("table {{ .Name }} no pk")
+	{{else}}
 	return {{.Name}}_{{.ID}}{{if .Sharding}}(t.{{.ID}}){{end}}, t.{{.ID}}
+	{{end}}
 }
 
 {{ if .Rels }}
@@ -198,12 +202,16 @@ func (t *{{.Name}}) Relation(edge string) (*gorpUtil.Field, bool) {
 {{- end }}
 
 func (t *{{.Name}}) Load(db gorp.SqlExecutor, pk int64) error {
+{{if .NoPK}}
+	panic("table {{ .Name }} no pk")
+{{else}}
 	return errors.Annotatef(t.Where(
 {{- if .Fields.Removed }}
 	{{if .Sharding }} {{.Name}}_Removed(t.Shard()).EQ(false), {{else}} {{.Name}}_Removed.EQ(false), {{end}}
 {{- end }}
 		{{.Name}}_{{.ID}}{{if .Sharding}}(t.{{.ID}}){{end}}.EQ(pk),
 	).Fetch(db), "pk:%d", pk)
+{{end}}
 }
 
 // Insert {{.Name}} to db
