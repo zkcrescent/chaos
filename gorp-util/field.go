@@ -33,7 +33,7 @@ func ShardTableField(table string, key string, sharding int64) func(int64) *Fiel
 			table: table,
 		}
 		if table != "" {
-			f.full = fmt.Sprintf("%v_%v.%v", table, shardkey%shardkey, key)
+			f.full = fmt.Sprintf("%v_%v.%v", table, shardkey%sharding, key)
 		} else {
 			f.full = key
 		}
