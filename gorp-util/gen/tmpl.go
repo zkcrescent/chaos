@@ -172,6 +172,11 @@ func (t {{.Name}}) Version() int64 {
 	{{ if .Version }} return t.{{.VersionKey}} {{else}} return 0 {{end}}
 }
 
+
+func (t {{.Name}}) NoPK() bool {
+	return {{.NoPK}}
+}
+
 func (t {{.Name}}) PK() (*gorpUtil.Field, interface{}) {
 	return {{.Name}}_{{.ID}}{{if .Sharding}}(t.{{.ID}}){{end}}, t.{{.ID}}
 }

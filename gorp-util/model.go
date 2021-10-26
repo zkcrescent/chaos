@@ -14,6 +14,7 @@ type Table interface {
 	VersionField() string
 	Version() int64
 	PK() (*Field, interface{})
+	NoPK() bool
 }
 
 type ShardingTable interface {
@@ -45,9 +46,14 @@ func (ms Models) checkTable(db *gorp.DbMap, fs ...TableCheck) ([]*TableMap, erro
 		f = fs[0]
 	}
 	for _, t := range ms {
-		pk, _ := t.PK()
+		tmp := db.AddTableWithName(t, t.TableName())
+		if !t.NoPK() {
+			pk, _ := t.PK()
+			tmp = tmp.SetKeys(true, pk.Key())
+		}
+
 		tm := &TableMap{
-			TableMap: db.AddTableWithName(t, t.TableName()).SetKeys(true, pk.Key()),
+			TableMap: tmp,
 		}
 		if v := t.VersionField(); v != "" {
 			tm.SetVersionCol(v)

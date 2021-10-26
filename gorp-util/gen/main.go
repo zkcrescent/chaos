@@ -266,6 +266,8 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 				logrus.Infof("Table %v find sharding: %v", name, em.Sharding)
 			case "@PK":
 				em.ID = annotation.Key
+			case "@NOPK":
+				em.NoPK = true
 			case "@VER":
 				em.Version = annotation.Key
 			case "@VERKEY":
@@ -331,6 +333,7 @@ type entityMeta struct {
 	IsShardTable bool
 	Init         bool
 	ID           string
+	NoPK         bool
 	Version      string
 	VersionKey   string
 	Rels         map[string]*Ref
