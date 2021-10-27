@@ -3,7 +3,7 @@ package trace
 import "context"
 
 type Context struct {
-	ctx context.Context
+	context.Context
 }
 
 func NewContext() CCTX {
@@ -13,9 +13,9 @@ func NewContext() CCTX {
 }
 
 func (c *Context) SetCTX(k, v interface{}) {
-	context.WithValue(c.ctx, k, v)
+	context.WithValue(c.Context, k, v)
 }
 
 func (c *Context) GetCTX(k interface{}) interface{} {
-	return c.ctx.Value(k)
+	return c.Context.Value(k)
 }

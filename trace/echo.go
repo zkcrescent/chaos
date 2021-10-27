@@ -3,12 +3,15 @@ package trace
 //trace for labstack/echo
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
 
 type CCTX interface {
+	context.Context
 	SetCTX(k, v interface{})
 	GetCTX(k interface{}) interface{}
 }
