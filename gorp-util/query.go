@@ -45,6 +45,7 @@ type queryCol struct {
 
 type Query struct {
 	onlyFields         []*queryCol // 自选映射字段
+	whereFields        []*queryCol // 自选映射时自配WHERE
 	model              Model
 	rels               []*Relation
 	conditions         []*Condition
@@ -77,10 +78,15 @@ func (q *Query) Fork() *Query {
 }
 
 // Only for query given field, args must be Find, hoder,Field, hoder...
-func (q *Query) Only(cols QueryCol) *Query {
-	// lazy init
+func (q *Query) Only(cols QueryCol, where QueryCol) *Query {
 	for k, v := range cols {
 		q.onlyFields = append(q.onlyFields, &queryCol{
+			field:  k,
+			holder: v,
+		})
+	}
+	for k, v := range where {
+		q.whereFields = append(q.whereFields, &queryCol{
 			field:  k,
 			holder: v,
 		})
@@ -382,10 +388,15 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	}
 	var fields []string
 	var args []interface{}
-	var query string
+	var query []string
 	for _, v := range q.onlyFields {
 		args = append(args, v.holder)
 		fields = append(fields, fmt.Sprintf("`%s`= ?", v.field.String()))
+	}
+
+	for _, v := range q.whereFields {
+		args = append(args, v.holder)
+		query = append(query, fmt.Sprintf("`%s`= ?", v.field.String()))
 	}
 	where, holders, err := q.whereQuery(false)
 	if err != nil {
@@ -394,9 +405,9 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	args = append(holders, args...)
 	var sql string
 	if where != "" {
-		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s AND %s", q.model.TableName(), strings.Join(fields, ","), where, query)
+		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s AND %s", q.model.TableName(), strings.Join(fields, ","), where, strings.Join(query, "AND"))
 	} else {
-		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s", q.model.TableName(), strings.Join(fields, ","), query)
+		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s", q.model.TableName(), strings.Join(fields, ","), strings.Join(query, "AND"))
 	}
 	if q.model.VersionField() != "" {
 		sql = fmt.Sprintf("%s AND `%s`=%v", sql, q.model.VersionField(), q.model.Version())
