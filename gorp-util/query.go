@@ -395,12 +395,12 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	var query []string
 	for _, v := range q.onlyFields {
 		args = append(args, v.holder)
-		fields = append(fields, fmt.Sprintf("`%s`= ?", v.field.String()))
+		fields = append(fields, fmt.Sprintf("%s= ?", v.field.String()))
 	}
 
 	for _, v := range q.whereFields {
 		args = append(args, v.holder)
-		query = append(query, fmt.Sprintf("`%s`= ?", v.field.String()))
+		query = append(query, fmt.Sprintf("%s= ?", v.field.String()))
 	}
 	where, holders, err := q.whereQuery(false)
 	if err != nil {
