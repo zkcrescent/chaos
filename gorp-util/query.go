@@ -408,7 +408,7 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	if err != nil {
 		return err
 	}
-	args = append(holders, args...)
+	args = append(args, holders...)
 	var sql string
 	if where != "" {
 		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s AND %s", q.model.TableName(), strings.Join(fields, ","), strings.Join(query, "AND"), where)
