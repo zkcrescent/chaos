@@ -78,14 +78,18 @@ func (q *Query) Fork() *Query {
 }
 
 // Only for query given field, args must be Find, hoder,Field, hoder...
-func (q *Query) Only(cols QueryCol, where QueryCol) *Query {
+func (q *Query) Only(cols QueryCol, where ...QueryCol) *Query {
+	var w QueryCol
+	if len(where) > 0 {
+		w = where[0]
+	}
 	for k, v := range cols {
 		q.onlyFields = append(q.onlyFields, &queryCol{
 			field:  k,
 			holder: v,
 		})
 	}
-	for k, v := range where {
+	for k, v := range w {
 		q.whereFields = append(q.whereFields, &queryCol{
 			field:  k,
 			holder: v,
