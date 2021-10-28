@@ -2,6 +2,7 @@ package gorpUtil
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/juju/errors"
@@ -402,6 +403,7 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 		args = append(args, v.holder)
 		query = append(query, fmt.Sprintf("%s= ?", v.field.String()))
 	}
+
 	where, holders, err := q.whereQuery(false)
 	if err != nil {
 		return err
@@ -409,13 +411,15 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	args = append(holders, args...)
 	var sql string
 	if where != "" {
-		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s AND %s", q.model.TableName(), strings.Join(fields, ","), where, strings.Join(query, "AND"))
+		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s AND %s", q.model.TableName(), strings.Join(fields, ","), strings.Join(query, "AND"), where)
 	} else {
 		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s", q.model.TableName(), strings.Join(fields, ","), strings.Join(query, "AND"))
 	}
 	if q.model.VersionField() != "" {
 		sql = fmt.Sprintf("%s AND `%s`=%v", sql, q.model.VersionField(), q.model.Version())
 	}
+
+	log.Printf("execute update: %v, %v\n", sql, args)
 
 	if _, err := db.Exec(sql, args...); err != nil {
 		return q.QueryError(err, sql)
