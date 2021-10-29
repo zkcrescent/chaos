@@ -34,6 +34,7 @@ type Models map[string]Table
 
 func (ms Models) Add(mm ...Table) {
 	for _, m := range mm {
+		log.Printf("add table in global: %v, type: %v", m.TableName(), reflect.TypeOf(m))
 		ms[m.TableName()] = m
 	}
 }
