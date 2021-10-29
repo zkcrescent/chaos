@@ -129,7 +129,7 @@ func (t *{{.Name}}) ShardInsert(db gorp.SqlExecutor) error {
 	}
 	tmp := t.Real()
 	err := db.Insert(tmp)
-	t = tmp.Real()
+	*t = tmp.Real()
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (t *{{.Name}}) ShardInsert(db gorp.SqlExecutor) error {
 }
 
 type {{$dot.Name}}Interface interface{
-	Real() *{{$dot.Name}}
+	Real() {{$dot.Name}}
 }
 
 {{- range  $idx, $v := .ShardingIdx }}
@@ -149,8 +149,8 @@ type {{$dot.Name}}{{$idx}} struct {
 	{{$dot.Name}}
 }
 
-func (t *{{$dot.Name}}{{$idx}}) Real() *{{$dot.Name}} {
-	return &t.{{$dot.Name}}
+func (t *{{$dot.Name}}{{$idx}}) Real() {{$dot.Name}} {
+	return t.{{$dot.Name}}
 }
 {{- end}}
 
@@ -286,7 +286,7 @@ func (t *{{.Name}}) Insert(db gorp.SqlExecutor) error {
 {{if .Sharding}}
 	tmp := t.Real()
 	err := db.Insert(tmp)
-	t = tmp.Real()
+	*t = tmp.Real()
 {{else}}
 	err := db.Insert(t)
 {{end}}
@@ -325,7 +325,7 @@ func (t *{{.Name}}) Update(db gorp.SqlExecutor) error {
 {{if .Sharding}}
 	tmp := t.Real()
 	_, err := db.Update(tmp)
-	t = tmp.Real()
+	*t = tmp.Real()
 {{else}}
 	_, err := db.Update(t)
 {{end}}
@@ -369,7 +369,7 @@ func (t *{{.Name}}) Remove(db gorp.SqlExecutor) error {
 {{if .Sharding}}
 	tmp := t.Real()
 	_, err := db.Update(tmp)
-	t = tmp.Real()
+	*t = tmp.Real()
 {{else}}
 	_, err := db.Update(t)
 {{end}}
@@ -406,7 +406,7 @@ func (t *{{.Name}}) Delete(db gorp.SqlExecutor) error {
 {{if .Sharding}}
 	tmp := t.Real()
 	_, err := db.Delete(tmp)
-	t = tmp.Real()
+	*t = tmp.Real()
 {{else}}
 	_, err := db.Delete(t)
 {{end}}
