@@ -17,7 +17,8 @@ func init() {
 	var t {{.Name}}
 	if t.Sharding() > 0 {
 		{{- range  $idx, $v := .ShardingIdx }}
-			{{ if $dot.IsShardTable }} gorpUtil.Tables.Add(t.ShardInit({{$idx}}+1)) {{else}} gorpUtil.Tables.Add({{$dot.Name}}{ {{$dot.ShardKey}}: {{$idx}}+1, }) {{end}}
+			{{ if $dot.IsShardTable }} gorpUtil.Tables.Add(t.ShardInit({{$idx}}+1).real()) {{else}} t.{{$dot.ShardKey}} = {{$idx}}+1
+		gorpUtil.Tables.Add(t.real()) {{end}}
 	  	{{- end}}
 	} else {
 	  gorpUtil.Tables.Add({{.Name}}{})
@@ -126,15 +127,53 @@ func (t *{{.Name}}) ShardInsert(db gorp.SqlExecutor) error {
 	if err := t.SetAutoIncrement(db); err != nil {
 		return err
 	}
-	err := db.Insert(t)
+	tmp := t.Real()
+	err := db.Insert(tmp)
+	t = tmp.Real()
 	if err != nil {
-		return errors.Annotate(db.Insert(t), t.String())
+		return err
 	}
 	if err := t.UnsetAutoIncrement(db); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+type {{$dot.Name}}Interface interface{
+	Real() *{{$dot.Name}}
+}
+
+{{- range  $idx, $v := .ShardingIdx }}
+type {{$dot.Name}}{{$idx}} struct {
+	{{$dot.Name}}
+}
+
+func (t *{{$dot.Name}}{{$idx}}) Real() *{{$dot.Name}} {
+	return &t.{{$dot.Name}}
+}
+{{- end}}
+
+func (t {{.Name}}) real() gorpUtil.Table {
+	switch t.Shard() {
+		{{- range  $idx, $v := .ShardingIdx }}
+		case {{$idx}}:
+			return {{$dot.Name}}{{$idx}}{t}
+		{{- end}}
+	}
+	panic(fmt.Sprintf("cant get real type of {{.Name}} of shard %v", t.Shard()))
+}
+
+
+// Real for insert and upadte
+func (t {{.Name}}) Real() {{.Name}}Interface {
+	switch t.Shard() {
+		{{- range  $idx, $v := .ShardingIdx }}
+		case {{$idx}}:
+			return &{{$dot.Name}}{{$idx}}{t}
+		{{- end}}
+	}
+	panic(fmt.Sprintf("cant get real type of {{.Name}} of shard %v", t.Shard()))
 }
 
 
@@ -244,9 +283,15 @@ func (t *{{.Name}}) Insert(db gorp.SqlExecutor) error {
 {{- if .Fields.UpdatedTime }}
 	t.UpdatedTime = gorpUtil.Now()
 {{- end }}
+{{if .Sharding}}
+	tmp := t.Real()
+	err := db.Insert(tmp)
+	t = tmp.Real()
+{{else}}
 	err := db.Insert(t)
+{{end}}
 	if err != nil {
-		return errors.Annotate(db.Insert(t), t.String())
+		return err
 	}
 
 	return nil
@@ -277,7 +322,13 @@ func (t *{{.Name}}) Update(db gorp.SqlExecutor) error {
 {{ if .Fields.UpdatedTime }}
 	t.UpdatedTime = gorpUtil.Now()
 {{- end }}
+{{if .Sharding}}
+	tmp := t.Real()
+	_, err := db.Update(tmp)
+	t = tmp.Real()
+{{else}}
 	_, err := db.Update(t)
+{{end}}
 	if err != nil {
 		return errors.Annotate(err, t.String())
 	}
@@ -315,7 +366,13 @@ func (t *{{.Name}}) Remove(db gorp.SqlExecutor) error {
 {{- if .Fields.Removed }}
 	t.Removed = true
 {{- end }}
+{{if .Sharding}}
+	tmp := t.Real()
+	_, err := db.Update(tmp)
+	t = tmp.Real()
+{{else}}
 	_, err := db.Update(t)
+{{end}}
 	if err != nil {
 		return errors.Annotate(err, t.String())
 	}
@@ -346,7 +403,13 @@ func (t *{{.Name}}) DeleteWithHooks(db gorp.SqlExecutor, preAndPostHook ...func(
 }
 
 func (t *{{.Name}}) Delete(db gorp.SqlExecutor) error {
+{{if .Sharding}}
+	tmp := t.Real()
+	_, err := db.Delete(tmp)
+	t = tmp.Real()
+{{else}}
 	_, err := db.Delete(t)
+{{end}}
 	if err != nil {
 		return errors.Annotate(err, t.String())
 	}

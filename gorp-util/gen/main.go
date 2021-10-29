@@ -252,6 +252,8 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 			switch annotation.Name {
 			case "@TABLE":
 				em.Table = annotation.Key
+			case "@SHARDINGKEYTYPE":
+				em.ShardKeyTp = annotation.Key
 			case "@SHARDINGKEY":
 				em.ShardKey = annotation.Key
 				logrus.Infof("Table %v find sharding key: %v", name, em.ShardKey)
@@ -295,29 +297,18 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 		logrus.Fatal("@VER must with @VERKEY")
 	}
 
-	if em.ShardKey != "" {
-		var ok bool
-		for _, v := range structType.Fields.List {
-			if len(v.Names) > 0 && v.Names[0].Name == em.ShardKey {
-				s := fmt.Sprintf("%v", v.Type)
-				if tp, ok := v.Type.(*ast.StarExpr); ok {
-					s = fmt.Sprintf("*%s", tp.X.(*ast.Ident).Name)
-				}
-				if tp, ok := v.Type.(*ast.Ident); ok {
-					s = tp.Name
-				}
-				logrus.Infof("type of Shardkey %v of struct %v is %v", em.ShardKey, em.Name, s)
-				em.ShardKeyTp = s
-				ok = true
-				break
-			}
-		}
-		if !ok {
-			logrus.Fatalf("shard key %v of struct %v must in struct fields", em.ShardKey, em.Name)
-		}
+	if em.ShardKey != "" && em.ShardKeyTp == "" {
+		em.ShardKeyTp = "int64"
 	}
 
 	em.IsShardTable = shards[name]
+	if len(em.Table)+len(em.ID)+len(em.Rels)+len(em.Muls) != 0 {
+		for k := range em.Fields {
+			if k == em.Name {
+				logrus.Warnf("Field name should not equal Struct Name: %v, embed type in other struct will be encouting gorp reflect error: coverting arguments X of type %v failed, is struct", em.Name, em.Name)
+			}
+		}
+	}
 
 	return em
 }
