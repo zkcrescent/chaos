@@ -1,6 +1,9 @@
 package gorpUtil
 
 import (
+	"log"
+	"reflect"
+
 	gorp "gopkg.in/gorp.v2"
 )
 
@@ -46,6 +49,7 @@ func (ms Models) checkTable(db *gorp.DbMap, fs ...TableCheck) ([]*TableMap, erro
 		f = fs[0]
 	}
 	for _, t := range ms {
+		log.Printf("add table: %v, type: %v\n", t.TableName(), reflect.TypeOf(t))
 		tmp := db.AddTableWithName(t, t.TableName())
 		if !t.NoPK() {
 			pk, _ := t.PK()
