@@ -13,7 +13,7 @@ func NewContext() CCTX {
 }
 
 func (c *Context) SetCTX(k, v interface{}) {
-	context.WithValue(c.Context, k, v)
+	c.Context = context.WithValue(c.Context, k, v)
 }
 
 func (c *Context) GetCTX(k interface{}) interface{} {
