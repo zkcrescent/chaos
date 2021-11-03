@@ -28,12 +28,13 @@ func EchoTraceMiddleWare() echo.MiddlewareFunc {
 			enty := logrus.WithFields(logrus.Fields{
 				TRACE_ID: id,
 			})
-			c.Set(TRACE_ID, id)
-			c.Set(TRACE_LOGGER, enty)
-			c = &CTX{
+			tmp := &CTX{
 				Context: c,
 				CCTX:    NewContext(),
 			}
+			tmp.SetCTX(TRACE_ID, id)
+			tmp.SetCTX(TRACE_LOGGER, enty)
+			c = tmp
 			return h(c)
 		}
 	}
