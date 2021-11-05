@@ -11,6 +11,7 @@ const (
 )
 
 type Condition struct {
+	pureString string
 	key        *string
 	operator   string
 	value      interface{}
@@ -25,6 +26,13 @@ func Case(key, operator string, value interface{}) *Condition {
 		operator:  operator,
 		value:     value,
 		connector: Connector_AND,
+	}
+}
+
+func PureCondition(s string) *Condition {
+	return &Condition{
+		pureString: s,
+		connector:  Connector_AND,
 	}
 }
 
@@ -68,6 +76,12 @@ func (c *Condition) SetConnector(connector string) *Condition {
 }
 
 func (c *Condition) ValString(index int) (string, []interface{}, error) {
+	if c.pureString != "" {
+		if index > 0 {
+			return fmt.Sprintf(" %v %v", c.connector, c.pureString), nil, nil
+		}
+		return c.pureString, nil, nil
+	}
 	var (
 		v    string = "?"
 		vals []interface{}
@@ -125,6 +139,12 @@ func (c *Condition) ValString(index int) (string, []interface{}, error) {
 }
 
 func (c *Condition) String(index int) (string, error) {
+	if c.pureString != "" {
+		if index > 0 {
+			return fmt.Sprintf(" %v %v", c.connector, c.pureString), nil
+		}
+		return c.pureString, nil
+	}
 	var (
 		v   string
 		err error

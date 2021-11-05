@@ -21,7 +21,7 @@ func init() {
 		gorpUtil.Tables.Add(t.real()) {{end}}
 	  	{{- end}}
 	} else {
-	  gorpUtil.Tables.Add({{.Name}}{})
+	{{ if not .GlobalSharding }} gorpUtil.Tables.Add({{.Name}}{}) {{end}}
 	}
 }
 
@@ -60,16 +60,26 @@ const (
 
 func (t {{.Name}}) Fields() []string {
 	return []string{
-{{- range $f, $tf := .Fields }}
-		{{if $dot.Sharding}} fmt.Sprintf("%v.{{$tf}}", t.TableName()), {{else}} "{{$dot.Table}}.{{$tf}}", {{end}}
+{{- range $tf := .FieldKeys }}
+		{{if $dot.Sharding}} fmt.Sprintf("%v.{{$tf}}", t.TableName()), {{else if $dot.GlobalSharding}} t.TableName() + ".{{$tf}}", {{else}} "{{$dot.Table}}.{{$tf}}", {{end}}
 {{- end}}
 	}
 }
 
+
+func (t {{.Name}}) Values() []interface{} {
+	return []interface{}{
+{{- range $tf := .FieldVals }}
+		t.{{$tf}},
+{{- end}}
+	}
+}
+
+
 {{- range $f, $tf := .Fields }}
 
 func (t {{$dot.Name}}) Field_{{$f}}() *gorpUtil.Field {
-	{{ if $dot.Sharding }} return	{{$dot.Name}}_{{$f}}(t.Shard()) {{else}} return	{{$dot.Name}}_{{$f}} {{end}}
+	{{ if $dot.Sharding}} return	{{$dot.Name}}_{{$f}}(t.Shard()) {{else if $dot.GlobalSharding}} return	gorpUtil.TableField(t.TableName(), "{{$tf}}") {{else}} return {{$dot.Name}}_{{$f}} {{end}}
 }
 {{- end}}
 
@@ -80,10 +90,12 @@ func (t {{$dot.Name}}) Shard() int64 {
 	return t.{{$dot.ShardKey}}%t.Sharding()
 }
 	{{- end}}
+	{{- if .ShardKey}}
 func (t *{{$dot.Name}}) SetShard(shard {{.ShardKeyTp}}) *{{$dot.Name}} {
 	t.{{$dot.ShardKey}} = shard
 	return t
 }
+	{{- end}}
 
 func (t {{$dot.Name}}) SetAutoIncrement(db gorp.SqlExecutor) error {
 	if _, err := db.Exec(
@@ -183,6 +195,7 @@ func (t {{.Name}}) Sharding() int64 {
 	return {{.Sharding}}
 }
 
+{{ if not .HasTableName }}
 func (t {{.Name}}) TableName() string {
 	if t.Sharding() <= 0 {
 	// no sharding key return basic table name
@@ -198,6 +211,7 @@ func (t {{.Name}}) TableName() string {
 
 	{{ end }}
 }
+{{ end }}
 
 func (t {{.Name}}) BasicTableName() string {
 	return "{{.Table}}"

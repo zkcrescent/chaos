@@ -9,7 +9,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -19,6 +19,50 @@ import (
 	"github.com/serenize/snaker"
 	"github.com/sirupsen/logrus"
 )
+
+type StructExtra struct {
+	GlobalSharding  bool
+	ShardMethod     bool
+	ShardInitMethod bool
+	TableNameMethod bool
+}
+type ExtraInfo map[string]*StructExtra
+
+func (h ExtraInfo) SetShardInitMethod(key string, has bool) {
+	h.init(key)
+	h[key].ShardInitMethod = has
+}
+
+func (h ExtraInfo) HasShardInitMethod(key string) bool {
+	h.init(key)
+	return h[key].ShardInitMethod
+}
+
+func (h ExtraInfo) SetShardMethod(key string, has bool) {
+	h.init(key)
+	h[key].ShardMethod = has
+}
+
+func (h ExtraInfo) HasShardMethod(key string) bool {
+	h.init(key)
+	return h[key].ShardMethod
+}
+
+func (h ExtraInfo) SetTableNameMethod(key string, has bool) {
+	h.init(key)
+	h[key].TableNameMethod = has
+}
+
+func (h ExtraInfo) HasTableNameMethod(key string) bool {
+	h.init(key)
+	return h[key].TableNameMethod
+}
+
+func (h ExtraInfo) init(key string) {
+	if _, ok := h[key]; !ok {
+		h[key] = &StructExtra{}
+	}
+}
 
 // usage: gen
 func main() {
@@ -61,8 +105,7 @@ func main() {
 		}
 	}
 
-	shardMethods := make(map[string]bool)
-	shardInit := make(map[string]bool)
+	extraInfo := make(ExtraInfo)
 	metas := make(map[string]*entityMeta)
 	for _, filename := range pkg.GoFiles {
 		if strings.HasSuffix(filename, "_gorp.go") {
@@ -80,15 +123,22 @@ func main() {
 
 		for _, decl := range file.Decls {
 			if dec, ok := decl.(*ast.FuncDecl); ok {
-				if dec.Name.Name != "Shard" && dec.Name.Name != "ShardInit" {
+				switch dec.Name.Name {
+				case "TableName", "Shard", "ShardInit":
+				default:
 					continue
 				}
+
 				if dec.Name.IsExported() && dec.Recv != nil && len(dec.Recv.List) == 1 {
+					if dec.Name.Name == "TableName" {
+						if r, ok := dec.Recv.List[0].Type.(*ast.Ident); ok {
+							extraInfo.SetTableNameMethod(r.Name, true)
+						}
+					}
 					if r, ok := dec.Recv.List[0].Type.(*ast.Ident); ok {
 						// unpointer method
-						logrus.Infof("find %v method: %v", r.Name, dec.Name.Name)
 						if dec.Name.Name == "Shard" {
-							shardMethods[r.Name] = true
+							extraInfo.SetShardMethod(r.Name, true)
 							if dec.Type.Params != nil && len(dec.Type.Params.List) != 0 {
 								logrus.Fatalf(fmt.Sprintf("method Shard of %v must without params", r.Name))
 							}
@@ -107,7 +157,7 @@ func main() {
 						}
 
 						if dec.Name.Name == "ShardInit" {
-							shardInit[r.Name] = true
+							extraInfo.SetShardInitMethod(r.Name, true)
 							if dec.Type.Params == nil || len(dec.Type.Params.List) != 1 {
 								logrus.Fatalf(fmt.Sprintf("method ShardInit of %v must without 1 params of int64", r.Name))
 							}
@@ -136,11 +186,11 @@ func main() {
 					}
 					if rr, ok := dec.Recv.List[0].Type.(*ast.StarExpr); ok {
 						if dec.Name.Name == "Shard" {
-							logrus.Fatalf(fmt.Sprintf("method %v of %v must with pointer",
+							logrus.Fatalf(fmt.Sprintf("method %v of %v must not with pointer",
 								dec.Name.Name, rr.X.(*ast.Ident).Name))
 						}
 						if dec.Name.Name == "ShardInit" {
-							logrus.Fatalf(fmt.Sprintf("method %v of %v must with pointer",
+							logrus.Fatalf(fmt.Sprintf("method %v of %v must not with pointer",
 								dec.Name.Name, rr.X.(*ast.Ident).Name))
 						}
 
@@ -150,8 +200,8 @@ func main() {
 
 		}
 
-		for k := range shardMethods {
-			if !shardInit[k] {
+		for k := range extraInfo {
+			if extraInfo.HasShardInitMethod(k) != extraInfo.HasShardMethod(k) {
 				logrus.Fatalf(fmt.Sprintf("shard of %v must has ShardInit method", k))
 			}
 		}
@@ -162,15 +212,22 @@ func main() {
 			switch node.(type) {
 			case *ast.GenDecl:
 				for _, spec := range node.(*ast.GenDecl).Specs {
+
 					typeSpec, ok := spec.(*ast.TypeSpec)
 					if !ok {
 						continue
 					}
 					structType, ok := typeSpec.Type.(*ast.StructType)
-					if !ok {
+					if ok {
+						metas[typeSpec.Name.Name] = parseEntityMeta(
+							extraInfo,
+							pkgName,
+							typeSpec.Name.Name,
+							structType,
+							comments,
+							typeMap)
 						continue
 					}
-					metas[typeSpec.Name.Name] = parseEntityMeta(shardMethods, pkgName, typeSpec.Name.Name, structType, comments, typeMap)
 				}
 			case *ast.TypeSpec:
 				typeSpec := node.(*ast.TypeSpec)
@@ -179,7 +236,10 @@ func main() {
 					continue
 				}
 
-				metas[typeSpec.Name.Name] = parseEntityMeta(shardMethods, pkgName, typeSpec.Name.Name, structType, comments, typeMap)
+				metas[typeSpec.Name.Name] = parseEntityMeta(
+					extraInfo, pkgName,
+					typeSpec.Name.Name, structType,
+					comments, typeMap)
 			}
 		}
 	}
@@ -235,12 +295,16 @@ func main() {
 	}
 }
 
-func parseEntityMeta(shards map[string]bool, pkg string, name string, structType *ast.StructType, commentGroup []*ast.CommentGroup, typeMap map[string]*ast.StructType) *entityMeta {
+func parseEntityMeta(extra ExtraInfo, pkg string, name string, structType *ast.StructType, commentGroup []*ast.CommentGroup, typeMap map[string]*ast.StructType) *entityMeta {
+	fields, tps, vals := FlatFields(structType, typeMap)
 	em := &entityMeta{
-		Pkg:    pkg,
-		Name:   name,
-		Fields: FlatFields(structType, typeMap),
-		Rels:   make(map[string]*Ref),
+		HasTableName: extra.HasTableNameMethod(name),
+		Pkg:          pkg,
+		Name:         name,
+		Fields:       fields,
+		FieldKeys:    tps,
+		FieldVals:    vals,
+		Rels:         make(map[string]*Ref),
 	}
 	for _, comments := range commentGroup {
 		for _, comment := range comments.List {
@@ -280,13 +344,15 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 				em.Muls = append(em.Muls, NewMul(annotation))
 			case "@NOINIT":
 				em.Init = false
+			case "@GLOBALSHARDING":
+				em.GlobalSharding = true
 			default:
 				logrus.Fatalf("unknown annotation: %v", annotation.Name)
 			}
 		}
 	}
 
-	if em.ShardKey == "" && em.Sharding > 0 {
+	if em.ShardKey == "" && em.Sharding > 0 && !extra.HasShardMethod(name) {
 		logrus.Fatalf("SHARDING of %v needing SHARDINGKEY", em.Name)
 	}
 	if em.Version == "" && em.Fields["UpdatedSeq"] != "" {
@@ -301,7 +367,7 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 		em.ShardKeyTp = "int64"
 	}
 
-	em.IsShardTable = shards[name]
+	em.IsShardTable = extra.HasShardMethod(name)
 	if len(em.Table)+len(em.ID)+len(em.Rels)+len(em.Muls) != 0 {
 		for k := range em.Fields {
 			if k == em.Name {
@@ -314,22 +380,26 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 }
 
 type entityMeta struct {
-	Pkg          string
-	Name         string
-	Fields       map[string]string
-	Table        string
-	ShardKey     string
-	Sharding     int
-	ShardingIdx  []int
-	IsShardTable bool
-	Init         bool
-	ID           string
-	NoPK         bool
-	Version      string
-	VersionKey   string
-	Rels         map[string]*Ref
-	Muls         []*Mul
-	ShardKeyTp   string
+	GlobalSharding bool // 全局按算号器 ID sharding
+	HasTableName   bool
+	Pkg            string
+	Name           string
+	Fields         map[string]string
+	FieldKeys      []string
+	FieldVals      []string
+	Table          string
+	ShardKey       string
+	Sharding       int
+	ShardingIdx    []int
+	IsShardTable   bool
+	Init           bool
+	ID             string
+	NoPK           bool
+	Version        string
+	VersionKey     string
+	Rels           map[string]*Ref
+	Muls           []*Mul
+	ShardKeyTp     string
 
 	// for tpl
 	Imports []string
@@ -418,19 +488,23 @@ func (e *entityMeta) generate(tpl *template.Template) {
 	}
 	filename := fmt.Sprintf("%s_gorp.go", strings.ToLower(e.Name))
 	logrus.Info(filename)
-	err = ioutil.WriteFile(filename, src, 0644)
+	err = os.WriteFile(filename, src, 0644)
 	if err != nil {
 		logrus.Fatalf(errors.ErrorStack(err))
 	}
 }
 
-func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) map[string]string {
+func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) (map[string]string, []string, []string) {
 	m := make(map[string]string)
+	var tps []string
+	var vals []string
 	for _, f := range structType.Fields.List {
 		if f.Tag != nil {
 			tag, ok := reflect.StructTag(strings.ReplaceAll(f.Tag.Value, "`", "")).Lookup("db")
 			if ok && tag != "-" {
 				m[f.Names[0].Name] = strings.TrimSpace(strings.Split(tag, ",")[0])
+				tps = append(tps, m[f.Names[0].Name])
+				vals = append(vals, f.Names[0].Name)
 			}
 		}
 	}
@@ -444,13 +518,26 @@ func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) 
 			} else {
 				em = f.Type.(*ast.Ident).Name
 			}
-			emm := FlatFields(typeMap[em], typeMap)
+			emm, tp, val := FlatFields(typeMap[em], typeMap)
 			for k, v := range emm {
 				if _, ok := m[k]; !ok {
 					m[k] = v
 				}
 			}
+			for k, v := range tp {
+				has := false
+				for _, vv := range tps {
+					if v == vv {
+						has = true
+						break
+					}
+				}
+				if !has {
+					tps = append(tps, v)
+					vals = append(vals, val[k])
+				}
+			}
 		}
 	}
-	return m
+	return m, tps, vals
 }
