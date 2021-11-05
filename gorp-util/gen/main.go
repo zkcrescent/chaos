@@ -286,7 +286,7 @@ func parseEntityMeta(shards map[string]bool, pkg string, name string, structType
 		}
 	}
 
-	if em.ShardKey == "" && em.Sharding > 0 {
+	if em.ShardKey == "" && em.Sharding > 0 && !shards[name] {
 		logrus.Fatalf("SHARDING of %v needing SHARDINGKEY", em.Name)
 	}
 	if em.Version == "" && em.Fields["UpdatedSeq"] != "" {

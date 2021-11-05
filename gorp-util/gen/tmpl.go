@@ -80,10 +80,12 @@ func (t {{$dot.Name}}) Shard() int64 {
 	return t.{{$dot.ShardKey}}%t.Sharding()
 }
 	{{- end}}
+	{{- if .ShardKey}}
 func (t *{{$dot.Name}}) SetShard(shard {{.ShardKeyTp}}) *{{$dot.Name}} {
 	t.{{$dot.ShardKey}} = shard
 	return t
 }
+	{{- end}}
 
 func (t {{$dot.Name}}) SetAutoIncrement(db gorp.SqlExecutor) error {
 	if _, err := db.Exec(
