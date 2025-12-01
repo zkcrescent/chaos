@@ -403,13 +403,23 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 
 	log.Printf("execute update: %v, %v\n", sql, args)
 
-	if _, err := db.Exec(sql, args...); err != nil {
+	result, err := db.Exec(sql, args...)
+	if err != nil {
+		return q.QueryError(err, sql)
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return q.QueryError(err, sql)
+	}
+	if n == 0 {
 		return q.QueryError(err, sql)
 	}
 
 	return nil
 
 }
+
+var ErrUpdateEffectNoRows = errors.New("update affected no rows")
 
 func (q *Query) queryRow(db gorp.SqlExecutor, query string, args []interface{}) error {
 	row := db.QueryRow(query, args...)

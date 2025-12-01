@@ -60,8 +60,8 @@ const (
 
 func (t {{.Name}}) Fields() []string {
 	return []string{
-{{- range $tf := .FieldKeys }}
-		{{if $dot.Sharding}} fmt.Sprintf("%v.{{$tf}}", t.TableName()), {{else if $dot.GlobalSharding}} t.TableName() + ".{{$tf}}", {{else}} "{{$dot.Table}}.{{$tf}}", {{end}}
+{{- range $f, $tf := .Fields }}
+		t.Field_{{$f}}().String(),
 {{- end}}
 	}
 }
@@ -70,7 +70,7 @@ func (t {{.Name}}) Fields() []string {
 func (t {{.Name}}) FieldList() []*gorpUtil.Field {
 	return []*gorpUtil.Field{
 {{- range $f, $tf := .Fields }}
-		{{$dot.Name}}_{{$f}},
+		t.Field_{{$f}}(),
 {{- end}}
 	}
 }
@@ -227,7 +227,7 @@ func (t {{.Name}}) BasicTableName() string {
 }
 
 func (t {{.Name}}) VersionField() string {
-    return "{{.Version}}"
+    return  "{{.Version}}"
 }
 
 func (t {{.Name}}) Version() int64 {
