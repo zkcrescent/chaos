@@ -400,9 +400,6 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	args = append(args, holders...)
 	var sql string
 	sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s", q.model.TableName(), strings.Join(fields, ","), where)
-	if q.model.VersionField() != "" {
-		sql = fmt.Sprintf("%s AND `%s`=%v", sql, q.model.VersionField(), q.model.Version())
-	}
 
 	log.Printf("execute update: %v, %v\n", sql, args)
 
