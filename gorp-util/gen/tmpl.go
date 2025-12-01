@@ -60,8 +60,8 @@ const (
 
 func (t {{.Name}}) Fields() []string {
 	return []string{
-{{- range $f, $tf := .Fields }}
-		t.Field_{{$f}}().String(),
+{{- range $f := .FS }}
+		t.Field_{{$f.FieldName}}().String(),
 {{- end}}
 	}
 }
@@ -69,8 +69,8 @@ func (t {{.Name}}) Fields() []string {
 
 func (t {{.Name}}) FieldList() []*gorpUtil.Field {
 	return []*gorpUtil.Field{
-{{- range $f, $tf := .Fields }}
-		t.Field_{{$f}}(),
+{{- range $f := .FS }}
+		t.Field_{{$f.FieldName}}(),
 {{- end}}
 	}
 }
@@ -78,8 +78,8 @@ func (t {{.Name}}) FieldList() []*gorpUtil.Field {
 
 func (t {{.Name}}) Values() []interface{} {
 	return []interface{}{
-{{- range $tf := .FieldVals }}
-		t.{{$tf}},
+{{- range $f := .FS }}
+		t.{{$f.FieldName}},
 {{- end}}
 	}
 }

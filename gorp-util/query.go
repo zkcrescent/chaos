@@ -412,7 +412,7 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 		return q.QueryError(err, sql)
 	}
 	if n == 0 {
-		return q.QueryError(err, sql)
+		return q.QueryError(ErrUpdateEffectNoRows, sql)
 	}
 
 	return nil

@@ -296,8 +296,9 @@ func main() {
 }
 
 func parseEntityMeta(extra ExtraInfo, pkg string, name string, structType *ast.StructType, commentGroup []*ast.CommentGroup, typeMap map[string]*ast.StructType) *entityMeta {
-	fields, tps, vals := FlatFields(structType, typeMap)
+	fields, tps, vals, fs := FlatFields(structType, typeMap)
 	em := &entityMeta{
+		FS:           fs,
 		HasTableName: extra.HasTableNameMethod(name),
 		Pkg:          pkg,
 		Name:         name,
@@ -385,6 +386,7 @@ type entityMeta struct {
 	Pkg            string
 	Name           string
 	Fields         map[string]string
+	FS             []*Fields
 	FieldKeys      []string
 	FieldVals      []string
 	Table          string
@@ -494,7 +496,13 @@ func (e *entityMeta) generate(tpl *template.Template) {
 	}
 }
 
-func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) (map[string]string, []string, []string) {
+type Fields struct {
+	FieldName string
+	Tag       string
+}
+
+func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) (map[string]string, []string, []string, []*Fields) {
+	var fields []*Fields
 	m := make(map[string]string)
 	var tps []string
 	var vals []string
@@ -505,6 +513,10 @@ func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) 
 				m[f.Names[0].Name] = strings.TrimSpace(strings.Split(tag, ",")[0])
 				tps = append(tps, m[f.Names[0].Name])
 				vals = append(vals, f.Names[0].Name)
+				fields = append(fields, &Fields{
+					FieldName: f.Names[0].Name,
+					Tag:       m[f.Names[0].Name],
+				})
 			}
 		}
 	}
@@ -518,7 +530,7 @@ func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) 
 			} else {
 				em = f.Type.(*ast.Ident).Name
 			}
-			emm, tp, val := FlatFields(typeMap[em], typeMap)
+			emm, tp, val, fs := FlatFields(typeMap[em], typeMap)
 			for k, v := range emm {
 				if _, ok := m[k]; !ok {
 					m[k] = v
@@ -535,9 +547,10 @@ func FlatFields(structType *ast.StructType, typeMap map[string]*ast.StructType) 
 				if !has {
 					tps = append(tps, v)
 					vals = append(vals, val[k])
+					fields = append(fields, fs[k])
 				}
 			}
 		}
 	}
-	return m, tps, vals
+	return m, tps, vals, fields
 }
