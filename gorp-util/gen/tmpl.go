@@ -67,6 +67,15 @@ func (t {{.Name}}) Fields() []string {
 }
 
 
+func (t {{.Name}}) FieldList() []*gorpUtil.Field {
+	return []*gorpUtil.Field{
+{{- range $f, $tf := .Fields }}
+		{{$dot.Name}}_{{$f}},
+{{- end}}
+	}
+}
+
+
 func (t {{.Name}}) Values() []interface{} {
 	return []interface{}{
 {{- range $tf := .FieldVals }}
