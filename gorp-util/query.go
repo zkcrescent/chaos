@@ -46,7 +46,6 @@ type queryCol struct {
 
 type Query struct {
 	onlyFields         []*queryCol // 自选映射字段
-	whereFields        []*queryCol // 自选映射时自配WHERE
 	model              Model
 	rels               []*Relation
 	conditions         []*Condition
@@ -79,19 +78,9 @@ func (q *Query) Fork() *Query {
 }
 
 // Only for query given field, args must be Find, hoder,Field, hoder...
-func (q *Query) Only(cols QueryCol, where ...QueryCol) *Query {
-	var w QueryCol
-	if len(where) > 0 {
-		w = where[0]
-	}
+func (q *Query) Only(cols QueryCol) *Query {
 	for k, v := range cols {
 		q.onlyFields = append(q.onlyFields, &queryCol{
-			field:  k,
-			holder: v,
-		})
-	}
-	for k, v := range w {
-		q.whereFields = append(q.whereFields, &queryCol{
 			field:  k,
 			holder: v,
 		})
@@ -393,15 +382,15 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	}
 	var fields []string
 	var args []interface{}
-	var query []string
 	for _, v := range q.onlyFields {
 		args = append(args, v.holder)
 		fields = append(fields, fmt.Sprintf("%s= ?", v.field.String()))
 	}
 
-	for _, v := range q.whereFields {
-		args = append(args, v.holder)
-		query = append(query, fmt.Sprintf("%s= ?", v.field.String()))
+	if len(q.conditions) == 0 {
+		pk, val := q.model.PK()
+		q.conditions = append(q.conditions, pk.EQ(val))
+		q.conditions = append(q.conditions, PureCondition(fmt.Sprintf("%s = %d", q.model.VersionField(), q.model.Version())))
 	}
 
 	where, holders, err := q.whereQuery(false)
@@ -410,11 +399,7 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	}
 	args = append(args, holders...)
 	var sql string
-	if where != "" {
-		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s AND %s", q.model.TableName(), strings.Join(fields, ","), strings.Join(query, "AND"), where)
-	} else {
-		sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s", q.model.TableName(), strings.Join(fields, ","), strings.Join(query, "AND"))
-	}
+	sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s", q.model.TableName(), strings.Join(fields, ","), where)
 	if q.model.VersionField() != "" {
 		sql = fmt.Sprintf("%s AND `%s`=%v", sql, q.model.VersionField(), q.model.Version())
 	}
