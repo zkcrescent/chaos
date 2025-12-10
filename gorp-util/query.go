@@ -2,7 +2,6 @@ package gorpUtil
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/juju/errors"
@@ -400,8 +399,6 @@ func (q *Query) Update(db gorp.SqlExecutor) error {
 	args = append(args, holders...)
 	var sql string
 	sql = fmt.Sprintf("UPDATE %s SET %s WHERE %s", q.model.TableName(), strings.Join(fields, ","), where)
-
-	log.Printf("execute update: %v, %v\n", sql, args)
 
 	result, err := db.Exec(sql, args...)
 	if err != nil {
